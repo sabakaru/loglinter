@@ -1,0 +1,12 @@
+version: "2"
+
+linters:
+  default: none
+  enable:
+    - loglinter
+  settings:
+    custom:
+      loglinter:
+        path: ./loglinter.so
+        description: Checks log messages for stylistic and security rules
+        original-env: false

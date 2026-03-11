@@ -70,9 +70,27 @@ func checkLogMessage(pass *analysis.Pass, arg ast.Expr) {
 		return
 	}
 
-	firstRune, _ := utf8.DecodeRuneInString(val)
+	firstRune, size := utf8.DecodeRuneInString(val)
 	if unicode.IsUpper(firstRune) {
-		pass.Reportf(lit.Pos(), "log message must start with a lowercase letter")
+		lowerRune := unicode.ToLower(firstRune)
+
+		fix := analysis.SuggestedFix{
+			Message: "Change first letter to lowercase",
+			TextEdits: []analysis.TextEdit{
+				{
+					Pos:     lit.Pos() + 1,
+					End:     lit.Pos() + 1 + token.Pos(size),
+					NewText: []byte(string(lowerRune)),
+				},
+			},
+		}
+
+		pass.Report(analysis.Diagnostic{
+			Pos:            lit.Pos(),
+			End:            lit.End(),
+			Message:        "log message must start with a lowercase letter",
+			SuggestedFixes: []analysis.SuggestedFix{fix},
+		})
 	}
 
 	for _, r := range val {
