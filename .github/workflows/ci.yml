@@ -58,7 +58,7 @@ jobs:
         run: $(go env GOPATH)/bin/golangci-lint run --config .golangci.yml ./pkg/analyzer/testdata/src/a/... > /dev/null 2>&1 || echo "Linter plugin successfully executed and found issues"
 
       - name: Upload plugin artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: loglinter.so
           path: loglinter.so
