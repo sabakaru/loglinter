@@ -138,7 +138,8 @@ func checkSensitiveData(pass *analysis.Pass, call *ast.CallExpr) {
 			case *ast.BasicLit:
 				if x.Kind == token.STRING {
 					v, _ := strconv.Unquote(x.Value)
-					if containsSensitive(v) {
+					v = strings.ToLower(v)
+					if containsSensitive(v) && (strings.Contains(v, "=") || strings.Contains(v, ":")) {
 						found = true
 					}
 				}
