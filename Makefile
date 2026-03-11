@@ -2,7 +2,7 @@ BUILD_DIR := $(CURDIR)/build
 PLUGIN_DIR := $(BUILD_DIR)/plugins
 PLUGIN_SO  := $(PLUGIN_DIR)/loglinter.so
 
-PLUGIN_FLAGS := -buildmode=plugin -trimpath -ldflags='-w -s'
+PLUGIN_FLAGS := -buildmode=plugin -trimpath -ldflags='-w -s' -tags plugin
 
 .PHONY: build test check clean pre-commit all
 
