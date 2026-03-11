@@ -14,14 +14,10 @@ repos:
       - id: go-build
       - id: go-unit-tests
 
-  - repo: local
+  - repo: https://github.com/sabakaru/loglinter
+    rev: develop
     hooks:
       - id: loglinter
-        name: loglinter
-        entry: go run ./cmd/loglinter
-        language: system
-        types: [go]
-        pass_filenames: true
         args:
           - -check-lowercase=true
           - -check-english=true
