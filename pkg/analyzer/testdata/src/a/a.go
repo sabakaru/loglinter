@@ -20,6 +20,9 @@ func invalidLogs() {
 
 	apiKey := "key"
 	slog.Debug("api_key=" + apiKey) // want "log message must not contain sensitive data"
+
+	token := "token"
+	slog.Debug("token=" + token) // want "log message must not contain sensitive data"
 }
 
 func validLogs() {

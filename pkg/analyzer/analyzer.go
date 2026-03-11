@@ -3,6 +3,7 @@ package analyzer
 import (
 	"go/ast"
 	"go/token"
+	"strconv"
 	"strings"
 	"unicode"
 	"unicode/utf8"
@@ -64,8 +65,8 @@ func checkLogMessage(pass *analysis.Pass, arg ast.Expr) {
 		return
 	}
 
-	val := strings.Trim(lit.Value, `"`)
-	if len(val) == 0 {
+	val, err := strconv.Unquote(lit.Value)
+	if err != nil || len(val) == 0 {
 		return
 	}
 
@@ -103,13 +104,6 @@ func checkSensitiveData(pass *analysis.Pass, call *ast.CallExpr) {
 		}
 
 		switch x := n.(type) {
-		case *ast.BasicLit:
-			if x.Kind == token.STRING {
-				val := strings.ToLower(x.Value)
-				if containsSensitive(val) {
-					found = true
-				}
-			}
 		case *ast.Ident:
 			name := strings.ToLower(x.Name)
 			if containsSensitive(name) {
