@@ -13,6 +13,28 @@ import (
 	"golang.org/x/tools/go/ast/inspector"
 )
 
+type Config struct {
+	SensitiveWords []string `mapstructure:"sensitive_words"`
+}
+
+var sensitiveWords = []string{"password", "api_key", "apikey", "token"}
+
+func SetSensitiveWords(words []string) {
+	if len(words) > 0 {
+		sensitiveWords = words
+	}
+}
+
+func containsSensitive(s string) bool {
+	s = strings.ToLower(s)
+	for _, word := range sensitiveWords {
+		if word != "" && strings.Contains(s, strings.ToLower(word)) {
+			return true
+		}
+	}
+	return false
+}
+
 var Analyzer = &analysis.Analyzer{
 	Name:     "loglinter",
 	Doc:      "Checks log messages for stylistic and security rules",
@@ -22,9 +44,7 @@ var Analyzer = &analysis.Analyzer{
 
 func run(pass *analysis.Pass) (any, error) {
 	ins := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
-	nodeFilter := []ast.Node{
-		(*ast.CallExpr)(nil),
-	}
+	nodeFilter := []ast.Node{(*ast.CallExpr)(nil)}
 
 	ins.Preorder(nodeFilter, func(n ast.Node) {
 		call := n.(*ast.CallExpr)
@@ -35,7 +55,6 @@ func run(pass *analysis.Pass) (any, error) {
 		checkSensitiveData(pass, call)
 		checkLogMessage(pass, call.Args[0])
 	})
-
 	return nil, nil
 }
 
@@ -44,18 +63,11 @@ func isLoggerFunc(pass *analysis.Pass, call *ast.CallExpr) bool {
 	if !ok {
 		return false
 	}
-
 	obj := pass.TypesInfo.Uses[sel.Sel]
-	if obj == nil {
+	if obj == nil || obj.Pkg() == nil {
 		return false
 	}
-
-	pkg := obj.Pkg()
-	if pkg == nil {
-		return false
-	}
-
-	path := pkg.Path()
+	path := obj.Pkg().Path()
 	return path == "log/slog" || path == "go.uber.org/zap"
 }
 
@@ -73,23 +85,22 @@ func checkLogMessage(pass *analysis.Pass, arg ast.Expr) {
 	firstRune, size := utf8.DecodeRuneInString(val)
 	if unicode.IsUpper(firstRune) {
 		lowerRune := unicode.ToLower(firstRune)
-
-		fix := analysis.SuggestedFix{
-			Message: "Change first letter to lowercase",
-			TextEdits: []analysis.TextEdit{
+		pass.Report(analysis.Diagnostic{
+			Pos:     lit.Pos(),
+			End:     lit.End(),
+			Message: "log message must start with a lowercase letter",
+			SuggestedFixes: []analysis.SuggestedFix{
 				{
-					Pos:     lit.Pos() + 1,
-					End:     lit.Pos() + 1 + token.Pos(size),
-					NewText: []byte(string(lowerRune)),
+					Message: "lowercase first letter",
+					TextEdits: []analysis.TextEdit{
+						{
+							Pos:     lit.Pos() + 1,
+							End:     lit.Pos() + 1 + token.Pos(size),
+							NewText: []byte(string(lowerRune)),
+						},
+					},
 				},
 			},
-		}
-
-		pass.Report(analysis.Diagnostic{
-			Pos:            lit.Pos(),
-			End:            lit.End(),
-			Message:        "log message must start with a lowercase letter",
-			SuggestedFixes: []analysis.SuggestedFix{fix},
 		})
 	}
 
@@ -114,37 +125,29 @@ func checkLogMessage(pass *analysis.Pass, arg ast.Expr) {
 
 func checkSensitiveData(pass *analysis.Pass, call *ast.CallExpr) {
 	found := false
-
-	var walk func(ast.Node)
-	walk = func(n ast.Node) {
-		if found || n == nil {
-			return
-		}
-
-		switch x := n.(type) {
-		case *ast.Ident:
-			name := strings.ToLower(x.Name)
-			if containsSensitive(name) {
-				found = true
-			}
-		}
-	}
-
 	for _, arg := range call.Args {
 		ast.Inspect(arg, func(n ast.Node) bool {
-			walk(n)
-			return !found
+			if found {
+				return false
+			}
+			switch x := n.(type) {
+			case *ast.Ident:
+				if containsSensitive(x.Name) {
+					found = true
+				}
+			case *ast.BasicLit:
+				if x.Kind == token.STRING {
+					v, _ := strconv.Unquote(x.Value)
+					if containsSensitive(v) {
+						found = true
+					}
+				}
+			}
+			return true
 		})
 	}
 
 	if found {
 		pass.Reportf(call.Pos(), "log message must not contain sensitive data")
 	}
-}
-
-func containsSensitive(s string) bool {
-	return strings.Contains(s, "password") ||
-		strings.Contains(s, "api_key") ||
-		strings.Contains(s, "apikey") ||
-		strings.Contains(s, "token")
 }

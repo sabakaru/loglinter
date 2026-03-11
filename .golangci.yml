@@ -1,5 +1,4 @@
 version: "2"
-
 linters:
   default: none
   enable:
@@ -8,5 +7,7 @@ linters:
     custom:
       loglinter:
         path: ./loglinter.so
-        description: Checks log messages for stylistic and security rules
+        description: Custom log linter
         original-env: false
+        settings:
+          sensitive_words: ["password", "apiKey", "api_key", "token"]
