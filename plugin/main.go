@@ -12,9 +12,7 @@ func New(conf any) ([]*analysis.Analyzer, error) {
 		return nil, err
 	}
 
-	if len(config.SensitiveWords) > 0 {
-		analyzer.SetSensitiveWords(config.SensitiveWords)
-	}
+	analyzer.ApplyConfig(config)
 
 	return []*analysis.Analyzer{analyzer.Analyzer}, nil
 }

@@ -1,0 +1,7 @@
+- id: loglinter
+  name: loglinter
+  description: Checks log messages for style and security rules
+  entry: loglinter
+  language: golang
+  main: ./cmd/loglinter
+  types: [go]

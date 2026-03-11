@@ -1,16 +1,33 @@
-.PHONY: build test lint-self install-check
+BUILD_DIR := $(CURDIR)/build
+PLUGIN_DIR := $(BUILD_DIR)/plugins
+PLUGIN_SO  := $(PLUGIN_DIR)/loglinter.so
 
-# Сборка плагина
+PLUGIN_FLAGS := -buildmode=plugin -trimpath -ldflags='-w -s'
+
+.PHONY: build test check clean pre-commit all
+
+# Build golangci-lint plugin
 build:
-	CGO_ENABLED=1 go build -buildmode=plugin -o loglinter.so ./plugin/main.go
+	@echo "Building plugin..."
+	@mkdir -p $(PLUGIN_DIR)
+	CGO_ENABLED=1 go build $(PLUGIN_FLAGS) -o $(PLUGIN_SO) ./plugin/main.go
 
-# Запуск юнит-тестов
+# Run unit tests
 test:
 	go test -v ./pkg/analyzer/...
 
-# Пример запуска на тестовых данных
+# Build plugin and run golangci-lint on test data
 check: build
-	golangci-lint run ./pkg/analyzer/testdata/src/a/...
+	golangci-lint run --config .golangci.yml ./pkg/analyzer/testdata/src/a/...
 
-# Полный цикл для проверки
+# Run pre-commit hooks
+pre-commit:
+	@pre-commit run --all-files
+
+# Clean build artifacts
+clean:
+	@rm -rf $(BUILD_DIR)
+	@rm -f loglinter.so
+
+# Full cycle: test + check
 all: test check
