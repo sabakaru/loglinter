@@ -1,0 +1,13 @@
+version: "2"
+linters:
+  default: none
+  enable:
+    - loglinter
+  settings:
+    custom:
+      loglinter:
+        path: ./loglinter.so
+        description: Custom log linter
+        original-env: false
+        settings:
+          sensitive_words: ["password", "apiKey", "api_key", "token"]

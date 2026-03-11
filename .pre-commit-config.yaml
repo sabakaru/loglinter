@@ -1,0 +1,26 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-yaml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+
+  - repo: https://github.com/dnephin/pre-commit-golang
+    rev: v0.5.1
+    hooks:
+      - id: go-fmt
+      - id: go-imports
+      - id: go-build
+      - id: go-unit-tests
+
+  - repo: https://github.com/sabakaru/loglinter
+    rev: f07382f60c3e3d79a78e546f9459bf26ff3631ed
+    hooks:
+      - id: loglinter
+        args:
+          - -check-lowercase=true
+          - -check-english=true
+          - -check-specials=true
+          - -check-sensitive=true
+          - -sensitive-words=password,token,api_key

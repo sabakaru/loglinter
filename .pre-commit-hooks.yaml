@@ -1,0 +1,7 @@
+- id: loglinter
+  name: loglinter
+  description: Checks log messages for style and security rules
+  entry: sh -c 'loglinter "$@" ./...' --
+  language: golang
+  types: [go]
+  pass_filenames: false
